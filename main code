@@ -1,0 +1,366 @@
+#include <ctime>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+using namespace std;
+
+class Customer {
+private:
+    string name;
+    string address;
+    string phoneNumber;
+    double balance;
+
+public:
+    string account_No;
+    string CNIC_No;
+
+    void Customerinfo() {
+        cout << "Enter Account Number: ";
+        cin >> account_No;
+        ofstream file(account_No.c_str());
+        
+        if (!file.is_open()) {
+            cout << "Error creating file." << endl;
+            return;
+        }
+
+        cout << "Enter your Name: ";
+        cin >> name;
+        file << "Name:" << name << endl;
+
+        cout << "Enter Home Address: ";
+        cin >> address;
+        file << "Home Address:" << address << endl;
+
+        cout << "Enter Phone No: ";
+        cin >> phoneNumber;
+        file << "Phone No:" << phoneNumber << endl;
+
+        cout << "Enter CNIC No: ";
+        cin >> CNIC_No;
+        file << "CNIC No:" << CNIC_No << endl;
+
+        cout << "Enter the balance to deposit in this account (min 500 Rs required): ";
+        cin >> balance;
+        if (balance < 500) {
+            cout << "Minimum balance of 500 Rs is required." << endl;
+            return;
+        }
+        file << "Balance:" << balance << endl;
+
+        cout << "Thank you for creating an account with our Bank" << endl;
+        file.close();
+    }
+};
+
+class Account : public Customer {
+public:
+    void DisplayAccountInfo() {
+    	cout<<"Enter Account No:"<<endl;
+    	cin>>account_No;
+        ifstream file(account_No.c_str());
+        if (!file.is_open()) {
+            cout << "Invalid Account No!" << endl;
+            return;
+        }
+
+        string line;
+        while (getline(file, line)) {
+            cout << line << endl;
+        }
+        file.close();
+    }
+
+
+
+void Deposit() {
+    string account_No;
+    double deposit;
+
+    cout << "Enter your Account No: ";
+    cin >> account_No;
+
+    // Open the file to read the current balance
+    ifstream file(account_No.c_str());
+    if (!file.is_open()) {
+        cout << "Invalid Account No" << endl;
+        return;
+    }
+
+    string line;
+    double balance = 0.0;
+    string fileContent;
+
+    // Read the file content and find the current balance
+    while (getline(file, line)) {
+        if (line.find("Balance:") != string::npos) {
+            stringstream ss(line.substr(line.find(":") + 1));
+            ss >> balance;
+        } else {
+            fileContent += line + "\n";
+        }
+    }
+    file.close();
+
+    cout << "Current Balance: " << balance << endl;
+    cout << "Enter amount to Deposit: ";
+    cin >> deposit;
+
+    balance += deposit;
+
+    // Open the file to write the updated balance
+    ofstream file_out(account_No.c_str(), ios::out | ios::trunc);
+    if (!file_out.is_open()) {
+        cout << "Error opening file for writing." << endl;
+        return;
+    }
+
+    // Write the updated balance and the rest of the content
+    file_out << fileContent;
+//    file_out << "Balance:" << balance << endl;
+
+    // Append the deposit transaction
+    time_t now = time(0);
+    char* dt = ctime(&now);
+    file_out << deposit << " Rs was deposited into your account on " << dt << endl;
+	file_out << "Balance:" << balance << endl;
+    file_out.close();
+
+    cout << "Deposit successful. New Balance: " << balance << endl;
+}
+
+
+void Withdraw() {
+    string account_No;
+    double withdraw;
+
+    cout << "Enter your Account No: ";
+    cin >> account_No;
+
+    // Open the file to read the current balance
+    ifstream file(account_No.c_str());
+    if (!file.is_open()) {
+        cout << "Invalid Account No" << endl;
+        return;
+    }
+
+    string line;
+    double balance = 0.0;
+    string fileContent;
+    
+    // Read the file content and find the current balance
+    while (getline(file, line)) {
+        if (line.find("Balance:") != string::npos) {
+            stringstream ss(line.substr(line.find(":") + 1));
+            ss >> balance;
+        } else {
+            fileContent += line + "\n";
+        }
+    }
+    file.close();
+
+    cout << "Current Balance: " << balance << endl;
+    cout << "Enter amount to Withdraw: ";
+    cin >> withdraw;
+
+    if (balance >= withdraw) {
+        balance -= withdraw;
+
+        // Open the file to write the updated balance
+        ofstream file_out(account_No.c_str(), ios::out | ios::trunc);
+        if (!file_out.is_open()) {
+            cout << "Error opening file for writing." << endl;
+            return;
+        }
+
+        // Write the updated balance and the rest of the content
+        file_out << fileContent;
+//        file_out << "Balance:" << balance << endl;
+        
+        // Append the withdrawal transaction
+        time_t now = time(0);
+        char* dt = ctime(&now);
+        file_out << withdraw << " Rs was withdrawn from your account on " << dt << endl;
+		file_out << "Balance:" << balance << endl;
+        file_out.close();
+
+        cout << "Withdrawal successful. New Balance: " << balance << endl;
+    } else {
+        cout << "Insufficient Balance" << endl;
+    }
+}
+
+};
+
+class Transaction : public Account {
+public:
+
+void Transfer() {
+    string fromAccount_No, toAccount_No;
+    double transfer_money;
+    int flag=0;
+	 t_r:
+    cout << "Enter your Account No: ";
+    cin >> fromAccount_No;
+
+    // Open the source account file to read the current balance
+    ifstream from_file(fromAccount_No.c_str());
+    if (!from_file.is_open()) {
+        cout << "Invalid Account No" << endl;
+        flag++;
+        if(flag>2){
+        	cout<<"Back to Homepage"<<endl<<endl;
+        	return;	
+		}else{
+			goto t_r;
+		}
+        
+    }
+
+    string line;
+    double from_balance = 0.0;
+    string from_fileContent;
+
+    // Read the source account file and find the current balance
+    while (getline(from_file, line)) {
+        if (line.find("Balance:") != string::npos) {
+            stringstream ss(line.substr(line.find(":") + 1));
+            ss >> from_balance;
+        } else {
+            from_fileContent += line + "\n";
+        }
+    }
+    from_file.close();
+
+    cout << "Current Balance: " << from_balance << endl;
+    cout << "Enter the account no you wish to transfer to: ";
+    cin >> toAccount_No;
+
+    // Open the destination account file to read the current balance
+    ifstream to_file(toAccount_No.c_str());
+    if (!to_file.is_open()) {
+        cout << "Invalid recipient Account No" << endl;
+        return;
+    }
+
+    double to_balance = 0.0;
+    string to_fileContent;
+
+    // Read the destination account file and find the current balance
+    while (getline(to_file, line)) {
+        if (line.find("Balance:") != string::npos) {
+            stringstream ss(line.substr(line.find(":") + 1));
+            ss >> to_balance;
+        } else {
+            to_fileContent += line + "\n";
+        }
+    }
+    to_file.close();
+
+    cout << "Enter amount to transfer: ";
+    cin >> transfer_money;
+
+    if (from_balance >= transfer_money) {
+        from_balance -= transfer_money;
+        to_balance += transfer_money;
+
+        // Update the source account file with the new balance
+        ofstream from_file_out(fromAccount_No.c_str(), ios::out | ios::trunc);
+        if (!from_file_out.is_open()) {
+            cout << "Error Couldn't Transfer'." << endl;
+            from_balance += transfer_money;
+        	to_balance -= transfer_money;
+            return;
+        }
+        from_file_out << from_fileContent;
+//        from_file_out << "Balance:" << from_balance << endl;
+
+        time_t now = time(0);
+        char* dt = ctime(&now);
+        from_file_out << transfer_money << " Rs was transferred from your account on " << dt << endl;
+        from_file_out << "Balance:" << from_balance << endl;
+        from_file_out.close();
+
+        // Update the destination account file with the new balance
+        ofstream to_file_out(toAccount_No.c_str(), ios::out | ios::trunc);
+        if (!to_file_out.is_open()) {
+            cout << "Error Transfering Money." << endl;
+            from_balance += transfer_money;
+        	to_balance -= transfer_money;
+            return;
+        }
+        to_file_out << to_fileContent;
+      //  to_file_out << "Balance:" << to_balance << endl;
+        to_file_out << transfer_money << " Rs was transferred into your account on " << dt << endl;
+        to_file_out << "Balance:" << to_balance << endl;
+        to_file_out.close();
+
+        cout << "Transfer successful. New Balance in your account: " << from_balance << endl;
+    } else {
+        cout << "Insufficient Balance" << endl;
+    }
+}
+
+
+};
+
+class BankingService {
+public:
+    void Run() {
+        Account acc;
+        int choice;
+        do {
+            cout << "\nHomepage" << endl;
+            cout << "1-> To Add Customer Info" << endl;
+            cout << "2-> To Display Customer Info" << endl;
+            cout << "3-> To Display Account Balance" << endl;
+            cout << "4-> Withdraw Money" << endl;
+            cout << "5-> Deposit Money into your Account" << endl;
+            cout << "6-> To Transfer Money" << endl;
+            cout << "0-> To Exit" << endl;
+            cout << "Enter Your choice: ";
+            cin >> choice;
+
+            switch (choice) {
+                case 1: {
+                    Customer c;
+                    c.Customerinfo();
+                    break;
+                }
+                case 2: {
+                    acc.DisplayAccountInfo();
+                    break;
+                }
+                case 3: {
+                    acc.DisplayAccountInfo();
+                    break;
+                }
+                case 4: {
+                    acc.Withdraw();
+                    break;
+                }
+                case 5: {
+                    acc.Deposit();
+                    break;
+                }
+                case 6: {
+                    Transaction t;
+                    t.Transfer();
+                    break;
+                }
+                default:
+                    if (choice != 0) {
+                        cout << "Invalid choice, please try again." << endl;
+                    }
+                    break;
+            }
+        } while (choice != 0);
+    }
+};
+
+int main() {
+    BankingService service;
+    service.Run();
+    return 0;
+}
